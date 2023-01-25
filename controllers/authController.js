@@ -20,6 +20,8 @@ export const login = expressAsyncHandler(async (req, res) => {
   }
 
   const foundUser = await User.findOne({ email }).exec();
+  const userData = await User.findOne({ email }).select("-password").lean();
+  // User.find().select("-password").lean()
 
   if (!foundUser || !foundUser.active) {
     return res.status(401).json({ message: "Unauthorized no found user" });
@@ -54,7 +56,7 @@ export const login = expressAsyncHandler(async (req, res) => {
   });
 
   // send accessToken containing username and roles
-  res.json({ accessToken });
+  res.json({ accessToken, userData });
 });
 
 //@desc Refresh
