@@ -20,8 +20,8 @@ export const login = expressAsyncHandler(async (req, res) => {
   }
 
   const foundUser = await User.findOne({ email }).exec();
-  const userData = await User.findOne({ email }).select("-password").lean();
-  // User.find().select("-password").lean()
+  const userData = await User.findOne({ email }).select("+_id").lean();
+  const userId = userData._id;
 
   if (!foundUser || !foundUser.active) {
     return res.status(401).json({ message: "Unauthorized no found user" });
@@ -34,11 +34,11 @@ export const login = expressAsyncHandler(async (req, res) => {
   const accessToken = jwt.sign(
     {
       UserInfo: {
-        email: foundUser.email,
+        id: foundUser._id,
       },
     },
     ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "10s" }
   );
 
   const refreshToken = jwt.sign(
@@ -56,7 +56,8 @@ export const login = expressAsyncHandler(async (req, res) => {
   });
 
   // send accessToken containing username and roles
-  res.json({ accessToken, userData });
+  console.log(userId);
+  res.json({ accessToken, userId });
 });
 
 //@desc Refresh
@@ -80,6 +81,7 @@ export const refresh = (req, res) => {
       if (err) return res.status(403).json({ message: "Forbidden" });
 
       const foundUser = await User.findOne({ email: decoded.email });
+      const userId = foundUser._id;
 
       if (!foundUser) return res.status(401).json({ message: "unauthorized" });
       console.log(ACCESS_TOKEN_SECRET);
@@ -87,12 +89,13 @@ export const refresh = (req, res) => {
         {
           UserInfo: {
             email: foundUser.email,
+            active: foundUser.active,
           },
         },
         ACCESS_TOKEN_SECRET,
-        { expiresIn: "15m" }
+        { expiresIn: "10s" }
       );
-      res.json({ accessToken });
+      res.json({ accessToken, userId });
     })
   );
 };

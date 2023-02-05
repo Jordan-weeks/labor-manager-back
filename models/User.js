@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   },
   firstName: String,
   lastName: String,
+  phone: String,
   //   roles: [
   //     {
   //       type: String,

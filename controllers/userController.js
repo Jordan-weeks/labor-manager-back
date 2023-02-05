@@ -14,6 +14,19 @@ export const getAllUsers = expressAsyncHandler(async (req, res) => {
   }
   res.json(users);
 });
+// @desc Get selected user data
+// @route GET /users/:id
+// @access Private
+
+export const getSelectUser = expressAsyncHandler(async (req, res) => {
+  console.log(req.params);
+  const { id } = req.params;
+  const userData = await User.findOne({ _id: id }).select("-password").lean();
+  if (!userData) {
+    return res.status(400).json({ message: "User data not found." });
+  }
+  res.json(userData);
+});
 
 // @desc Create new user
 // @route POST /users
@@ -49,8 +62,8 @@ export const createNewUser = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const updateUser = expressAsyncHandler(async (req, res) => {
-  const { id, email, firstName, lastName, active, password } = req.body;
-
+  const { id, email, firstName, lastName, phone, active, password } = req.body;
+  console.log(req.body);
   if (!id) {
     return res.status(400).json({ message: "ID required for lookup" });
   }
@@ -64,7 +77,7 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
   const duplicate = await User.findOne({ email }).lean().exec();
   // allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate username" });
+    return res.status(409).json({ message: "Duplicate Email" });
   }
 
   if (email) {
@@ -75,6 +88,9 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
   }
   if (lastName) {
     user.lastName = lastName;
+  }
+  if (phone) {
+    user.phone = phone;
   }
   if (active) {
     user.active = active;
