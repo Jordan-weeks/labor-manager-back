@@ -18,7 +18,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 import { router as root } from "./routes/root.js";
 import { router as userRoute } from "./routes/userRouter.js";
-// import { router as noteRoute } from "./routes/noteRouter.js";
+import { router as jobRoute } from "./routes/jobRouter.js";
 import { router as authRoute } from "./routes/authRouter.js";
 
 const app = express();
@@ -38,6 +38,7 @@ app.use(cookieParser());
 //Routes
 app.use("/", root);
 app.use("/users", userRoute);
+app.use("/jobs", jobRoute);
 app.use("/auth", authRoute);
 
 app.use(errorHandler);
