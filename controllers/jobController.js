@@ -7,18 +7,32 @@ import { User } from "../models/User.js";
 // @access Private
 
 export const getAssignedJobs = expressAsyncHandler(async (req, res) => {
-  const { userId } = req.body;
-  console.log(req.body);
-  const foundUser = await User.findById(userId).exec();
+  const { id } = req.params;
+  console.log(id);
+  const foundUser = await User.findById(id).exec();
 
   if (!foundUser) {
     return res.status(400).json({ message: "Invalid userId." });
   }
-  const jobs = await Job.find({ usersOnJob: userId }).exec();
+  const jobs = await Job.find({ usersOnJob: id }).exec();
 
   if (!jobs) {
-    return res.status(400).json({ message: "No jobs assigned to user." });
+    return res.status(204).json({ message: "No jobs assigned to user." });
   } else res.json(jobs);
+});
+export const getIndividualJob = expressAsyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+  console.log(jobId);
+  // const foundUser = await User.findById(id).exec();
+
+  // if (!foundUser) {
+  //   return res.status(400).json({ message: "Invalid userId." });
+  // }
+  const job = await Job.find({ _id: jobId }).exec();
+
+  if (!job) {
+    return res.status(400).json({ message: "Invalid jobId.." });
+  } else res.json(job);
 });
 
 // @desc Create new job

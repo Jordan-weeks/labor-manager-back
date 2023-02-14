@@ -4,6 +4,7 @@ import {
   createNewJob,
   deleteJob,
   updateJob,
+  getIndividualJob,
 } from "../controllers/jobController.js";
 import { verifyJWT } from "../middleware/verifyJWT.js";
 
@@ -11,8 +12,9 @@ export const router = express.Router();
 router.use(verifyJWT);
 router
   .route("/")
-  .get(getAssignedJobs)
+
   .post(createNewJob)
   .patch(updateJob)
   .delete(deleteJob);
-// router.route("/:id").get(getSelectUser);
+router.route("/:id").get(getAssignedJobs);
+router.route("/:jobId").get(getIndividualJob);
