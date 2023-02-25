@@ -1,6 +1,7 @@
 import expressAsyncHandler from "express-async-handler";
 import { Job } from "../models/Job.js";
 import { User } from "../models/User.js";
+import { Task } from "../models/Task.js";
 
 // @desc Get jobs assigned to logged in user
 // @route GET /jobs
@@ -38,7 +39,7 @@ export const getIndividualJob = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const createNewJob = expressAsyncHandler(async (req, res) => {
-  const { jobName, userId } = req.body;
+  const { jobName, jobNumber, userId } = req.body;
   const foundUser = await User.findById(userId).exec();
 
   if (!foundUser) {
@@ -48,7 +49,12 @@ export const createNewJob = expressAsyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Please enter a job name" });
   }
 
-  const job = await Job.create({ jobName, usersOnJob: userId });
+  const job = await Job.create({
+    jobName,
+    jobNumber,
+    usersOnJob: userId,
+    active: true,
+  });
   if (job) {
     res.status(201).json({ message: `Job ${jobName} successfully created.` });
   } else {
@@ -62,8 +68,11 @@ export const createNewJob = expressAsyncHandler(async (req, res) => {
 export const updateJob = expressAsyncHandler(async (req, res) => {
   const { jobId, jobName, jobNumber, usersOnJob, active } = req.body;
   console.log(req.body);
-  if (!jobId) {
-    return res.status(400).json({ message: "ID required for lookup" });
+
+  if (!jobId || !jobName || typeof active !== "boolean") {
+    return res
+      .status(400)
+      .json({ message: "Job ID, Job name and active status required." });
   }
 
   const job = await Job.findById(jobId).exec();
@@ -80,44 +89,16 @@ export const updateJob = expressAsyncHandler(async (req, res) => {
   if (usersOnJob) {
     job.usersOnJob = usersOnJob;
   }
-  if (active) {
-    job.active = active;
-  }
 
+  job.active = active;
   const updatedJob = await job.save();
   res.json({ message: `${updatedJob.jobName} is updated` });
+  console.log(updatedJob);
 });
 
 // @desc Add task to current job
 // @route PATCH /jobs/add-task
 // @access Private
-
-export const addTask = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskName, description, hours } = req.body;
-  if (!jobId) {
-    return res.status(400).json({ message: "ID required for lookup" });
-  }
-  const job = await Job.findById(jobId).exec();
-
-  if (!taskName) {
-    return res.status(400).json({ message: "Task name is required" });
-  }
-  const task = {
-    name: taskName,
-    description: description,
-    hours: hours,
-  };
-
-  // if (description) {
-  //   task.description = description;
-  // }
-  // if (hours) {
-  //   task.hours = hours;
-
-  job.tasks.push(task);
-  const updatedJob = await job.save();
-  res.json({ message: `${task.name} added to${updatedJob.jobName}` });
-});
 
 // @desc Delete Job
 // @route DELETE /jobs

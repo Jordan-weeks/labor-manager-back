@@ -1,19 +1,21 @@
 import { Schema, model } from "mongoose";
+import { taskSchema } from "./Task.js";
 
 const jobSchema = new Schema({
   jobName: {
     type: String,
     required: true,
   },
-  tasks: {
-    type: Array,
+  jobNumber: {
+    type: String,
   },
+  tasks: [taskSchema],
   usersOnJob: {
     type: Array,
   },
   active: {
     type: Boolean,
-    default: true,
+    required: true,
   },
 });
 

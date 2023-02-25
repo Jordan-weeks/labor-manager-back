@@ -20,6 +20,7 @@ import { router as root } from "./routes/root.js";
 import { router as userRoute } from "./routes/userRouter.js";
 import { router as jobRoute } from "./routes/jobRouter.js";
 import { router as authRoute } from "./routes/authRouter.js";
+import { router as taskRoute } from "./routes/taskRouter.js";
 
 const app = express();
 const PORT = process.env.PORT || 3500;
@@ -39,6 +40,7 @@ app.use(cookieParser());
 app.use("/", root);
 app.use("/users", userRoute);
 app.use("/jobs", jobRoute);
+app.use("/tasks", taskRoute);
 app.use("/auth", authRoute);
 
 app.use(errorHandler);
