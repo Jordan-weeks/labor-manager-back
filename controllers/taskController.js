@@ -1,38 +1,38 @@
-import expressAsyncHandler from "express-async-handler";
-import { Job } from "../models/Job.js";
-import { User } from "../models/User.js";
-import { Task } from "../models/Task.js";
+import expressAsyncHandler from 'express-async-handler'
+import { Job } from '../models/Job.js'
+import { Task } from '../models/Task.js'
+import { User } from '../models/User.js'
 
 // @desc Add task to current job
 // @route PATCH /tasks/add-task
 // @access Private
 
 export const addTask = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskName, description, estimatedHours, status } = req.body;
+  const { jobId, taskName, description, estimatedHours, status } = req.body
   if (!jobId) {
-    return res.status(400).json({ message: "ID required for lookup" });
+    return res.status(400).json({ message: 'ID required for lookup' })
   }
-  const job = await Job.findById(jobId).exec();
+  const job = await Job.findById(jobId).exec()
 
   if (!taskName) {
-    return res.status(400).json({ message: "Task name is required" });
+    return res.status(400).json({ message: 'Task name is required' })
   }
-  const task = await Task.create({
+  const task = {
     taskName,
     description,
     estimatedHours,
     status,
-  });
-
-  if (!task) {
-    res.status(400).json({ message: "invalid user data received" });
   }
 
-  job.tasks.push(task);
-  const updatedJob = await job.save();
+  if (!task) {
+    res.status(400).json({ message: 'invalid user data received' })
+  }
 
-  res.json({ message: `${task.taskName} added to${updatedJob.jobName}` });
-});
+  job.tasks.push(task)
+  const updatedJob = await job.save()
+
+  res.json({ message: `${task.taskName} added to${updatedJob.jobName}` })
+})
 
 // @desc update task
 // @route Patch /tasks
@@ -40,51 +40,108 @@ export const addTask = expressAsyncHandler(async (req, res) => {
 
 export const updateTask = expressAsyncHandler(async (req, res) => {
   const { jobId, taskId, taskName, description, estimatedHours, status } =
-    req.body;
-  console.log(req.body);
+    req.body
+  console.log(req.body)
 
   if (!jobId) {
-    return res.status(400).json({ message: "Job ID required for lookup" });
+    return res.status(400).json({ message: 'Job ID required for lookup' })
   }
-  const job = await Job.findById(jobId).exec();
+  const job = await Job.findById(jobId).exec()
 
   if (!taskId) {
-    return res.status(400).json({ message: "Task ID required for lookup" });
+    return res.status(400).json({ message: 'Task ID required for lookup' })
   }
-  const task = job.tasks.id(taskId);
+  const task = job.tasks.id(taskId)
 
   if (taskName) {
-    task.taskName = taskName;
+    task.taskName = taskName
   }
   if (description) {
-    task.description = description;
+    task.description = description
   }
   if (estimatedHours) {
-    task.estimatedHours = estimatedHours;
+    task.estimatedHours = estimatedHours
   }
   if (status) {
-    task.status = status;
+    task.status = status
   }
 
-  await job.save();
-  res.json({ message: `${task.taskName} updated` });
-});
+  await job.save()
+  res.json({ message: `${task.taskName} updated` })
+})
 
 // @desc delete task
 // @route DELETE /tasks
 // @access Private
 
 export const deleteTask = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskId } = req.body;
-  console.log(req.body);
+  const { jobId, taskId } = req.body
+  console.log(req.body)
   if (!jobId) {
-    return res.status(400).json({ message: "ID required for lookup" });
+    return res.status(400).json({ message: 'ID required for lookup' })
   }
-  const job = await Job.findById(jobId).exec();
-  const task = job.tasks.id(taskId);
+  const job = await Job.findById(jobId).exec()
+  const task = job.tasks.id(taskId)
 
-  job.tasks.id(taskId).remove();
-  const updatedJob = await job.save();
+  job.tasks.id(taskId).remove()
+  const updatedJob = await job.save()
 
-  res.json({ message: `${task.taskName} removed from${updatedJob.jobName}` });
-});
+  res.json({ message: `${task.taskName} removed from${updatedJob.jobName}` })
+})
+
+// @desc Add comment to a task
+// @route PATCH /tasks/add-comment
+// @access Private
+
+export const addComment = expressAsyncHandler(async (req, res) => {
+  const { jobId, taskId, commentBody, author } = req.body
+  console.log(req.body)
+  if (!jobId) {
+    return res.status(400).json({ message: 'Job ID required for lookup' })
+  }
+  const job = await Job.findById(jobId).exec()
+  const task = job.tasks.id(taskId)
+
+  const comment = { body: commentBody, author }
+  job.tasks.id(taskId).comments.push(comment)
+
+  console.log(task)
+  await job.save()
+  res.json({ message: `Comment added to ${task.taskName}` })
+})
+
+// @desc Edit an existing comment
+// @route PATCH /tasks/edit-comment
+// @access Private
+
+export const editComment = expressAsyncHandler(async (req, res) => {
+  const { jobId, taskId, commentId, commentBody } = req.body
+
+  // if (!jobId) {
+  //   return res.status(400).json({ message: 'Job ID required for lookup' })
+  // }
+
+  const job = await Job.findById(jobId)
+  const task = job.tasks.id(taskId)
+  const comments = task.comments
+  const foundComment = comments.id(commentId)
+
+  foundComment.body = commentBody
+  const updatedComment = await job.save()
+  res.json({ message: 'comment updated' })
+})
+
+// @desc Delete a comment assigned to a task
+// @route DELETE /tasks/delete-comment
+// @access Private
+
+export const deleteComment = expressAsyncHandler(async (req, res) => {
+  const { jobId, taskId, commentId, commentBody } = req.body
+
+  if (!jobId) {
+    return res.status(400).json({ message: 'Job ID required for lookup' })
+  }
+  const job = await Job.findById(jobId).exec()
+  const comment = job.tasks.id(taskId).comments.id(commentId)
+  console.log(comment)
+})

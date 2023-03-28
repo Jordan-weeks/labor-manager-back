@@ -1,13 +1,18 @@
-import express from "express";
+import express from 'express'
 import {
-  updateTask,
+  addComment,
   addTask,
+  deleteComment,
   deleteTask,
-} from "../controllers/taskController.js";
-import { verifyJWT } from "../middleware/verifyJWT.js";
-
-export const router = express.Router();
+  editComment,
+  updateTask,
+} from '../controllers/taskController.js'
+import { verifyJWT } from '../middleware/verifyJWT.js'
+export const router = express.Router()
 // router.use(verifyJWT);
-router.route("/add-task").patch(addTask);
-router.route("/").patch(updateTask);
-router.route("/").delete(deleteTask);
+router.route('/add-task').patch(addTask)
+router.route('/add-comment').patch(addComment)
+router.route('/edit-comment').patch(editComment)
+router.route('/delete-comment').delete(deleteComment)
+router.route('/').patch(updateTask)
+router.route('/').delete(deleteTask)

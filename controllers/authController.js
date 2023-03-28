@@ -12,6 +12,7 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 //@desc Login
 //@route Post /auth
 //@access Public
+
 export const login = expressAsyncHandler(async (req, res) => {
   const { email, password } = req.body;
   console.log(req.body);
@@ -20,12 +21,15 @@ export const login = expressAsyncHandler(async (req, res) => {
   }
 
   const foundUser = await User.findOne({ email }).exec();
+  if (!foundUser || !foundUser.active) {
+      return res.status(401).json({ message: "Unauthorized no found user" });
+    }
+
   const userData = await User.findOne({ email }).select("+_id").lean();
+  console.log(foundUser)
   const userId = userData._id;
 
-  if (!foundUser || !foundUser.active) {
-    return res.status(401).json({ message: "Unauthorized no found user" });
-  }
+  
 
   const match = await bcrypt.compare(password, foundUser.password);
 

@@ -1,4 +1,13 @@
-import { Schema, model } from "mongoose";
+import { model, Schema } from 'mongoose'
+const commentSchema = new Schema({
+  body: String,
+  author: String,
+  date: {
+    type: Date,
+    default: Date.now,
+    required: true,
+  },
+})
 
 export const taskSchema = new Schema({
   taskName: {
@@ -18,6 +27,7 @@ export const taskSchema = new Schema({
   estimatedHours: {
     type: Number,
   },
-});
+  comments: [commentSchema],
+})
 
-export const Task = model("Task", taskSchema);
+export const Task = model('Task', taskSchema)
