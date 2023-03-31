@@ -2,6 +2,10 @@ import { model, Schema } from 'mongoose'
 const commentSchema = new Schema({
   body: String,
   author: String,
+  edited: {
+    type: Boolean,
+    default: false,
+  },
   date: {
     type: Date,
     default: Date.now,

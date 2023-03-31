@@ -95,17 +95,18 @@ export const deleteTask = expressAsyncHandler(async (req, res) => {
 
 export const addComment = expressAsyncHandler(async (req, res) => {
   const { jobId, taskId, commentBody, author } = req.body
-  console.log(req.body)
   if (!jobId) {
     return res.status(400).json({ message: 'Job ID required for lookup' })
   }
+
+  // ? There is probably a better way of doing this without needing the jobId and taskId.
+
   const job = await Job.findById(jobId).exec()
   const task = job.tasks.id(taskId)
 
   const comment = { body: commentBody, author }
   job.tasks.id(taskId).comments.push(comment)
 
-  console.log(task)
   await job.save()
   res.json({ message: `Comment added to ${task.taskName}` })
 })
@@ -115,18 +116,34 @@ export const addComment = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const editComment = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskId, commentId, commentBody } = req.body
+  const { jobId, taskId, commentId, commentBody, userId } = req.body
 
-  // if (!jobId) {
-  //   return res.status(400).json({ message: 'Job ID required for lookup' })
-  // }
+  if (!jobId) {
+    return res.status(400).json({ message: 'Job ID required for lookup' })
+  }
+  if (!taskId) {
+    return res.status(400).json({ message: 'Task ID required for lookup' })
+  }
+  if (!commentId) {
+    return res.status(400).json({ message: 'comment Id required for lookup' })
+  }
+
+  // ? There is probably a better way of doing this without needing the jobId and taskId.
 
   const job = await Job.findById(jobId)
   const task = job.tasks.id(taskId)
   const comments = task.comments
   const foundComment = comments.id(commentId)
 
+  if (foundComment.author !== userId) {
+    return res.status(400).json({ message: 'Only author can modify comment' })
+  }
+  if (foundComment.body === commentBody)
+    return res.status(204).json({ message: 'No change to comment' })
+
+  foundComment.edited = true
   foundComment.body = commentBody
+  foundComment.date = Date.now()
   const updatedComment = await job.save()
   res.json({ message: 'comment updated' })
 })
@@ -136,12 +153,28 @@ export const editComment = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const deleteComment = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskId, commentId, commentBody } = req.body
+  const { jobId, taskId, commentId, userId } = req.body
 
   if (!jobId) {
     return res.status(400).json({ message: 'Job ID required for lookup' })
   }
-  const job = await Job.findById(jobId).exec()
-  const comment = job.tasks.id(taskId).comments.id(commentId)
-  console.log(comment)
+  if (!taskId) {
+    return res.status(400).json({ message: 'Task ID required for lookup' })
+  }
+  if (!commentId) {
+    return res.status(400).json({ message: 'comment Id required for lookup' })
+  }
+
+  const job = await Job.findById(jobId)
+  const task = job.tasks.id(taskId)
+  const comments = task.comments
+  const foundComment = comments.id(commentId)
+
+  if (foundComment.author !== userId) {
+    return res.status(400).json({ message: 'Only author can modify comment' })
+  }
+  foundComment.remove()
+
+  await job.save()
+  res.json({ message: 'comment removed' })
 })
