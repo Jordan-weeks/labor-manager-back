@@ -1,8 +1,11 @@
 import expressAsyncHandler from 'express-async-handler'
+import { createTransport } from 'nodemailer'
 import { Job } from '../models/Job.js'
 import { Task } from '../models/Task.js'
 import { User } from '../models/User.js'
 
+const EMAIL_USERNAME = process.env.EMAIL_USERNAME
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD
 // @desc Get jobs assigned to logged in user
 // @route GET /jobs
 // @access Private
@@ -148,4 +151,37 @@ export const deleteJob = expressAsyncHandler(async (req, res) => {
   const result = await job.deleteOne()
   const reply = `job ${result.jobName} with ID ${result._id} deleted`
   res.json(reply)
+})
+
+// @desc send job invite link email
+// @route POST /jobs/invite
+// @access Private
+
+export const sendJobInvite = expressAsyncHandler(async (req, res) => {
+  const { jobId, email, role } = req.body
+
+  const transporter = createTransport({
+    host: 'smtppro.zoho.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'welcome@jobboost.app',
+      pass: EMAIL_PASSWORD,
+    },
+  })
+
+  const mailOptions = {
+    from: 'welcome@jobboost.app',
+    to: email,
+    subject: "You've been invited to join!",
+    text: 'this is a test email that will have a link to follow',
+  }
+  console.log(EMAIL_USERNAME)
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('Email sent: ' + info.response)
+    }
+  })
 })

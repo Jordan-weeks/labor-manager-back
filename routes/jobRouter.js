@@ -5,6 +5,7 @@ import {
   getAssignedJobs,
   getIndividualJob,
   getUsernames,
+  sendJobInvite,
   updateJob,
 } from '../controllers/jobController.js'
 import { verifyJWT } from '../middleware/verifyJWT.js'
@@ -12,6 +13,7 @@ import { verifyJWT } from '../middleware/verifyJWT.js'
 export const router = express.Router()
 // router.use(verifyJWT);
 router.route('/').post(createNewJob)
+router.route('/invite').post(sendJobInvite)
 router.route('/update-job').patch(updateJob)
 router.route('/delete-job').delete(deleteJob)
 router.route('/:id').get(getAssignedJobs)
