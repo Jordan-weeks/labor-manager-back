@@ -1,5 +1,6 @@
 import expressAsyncHandler from 'express-async-handler'
 import { createTransport } from 'nodemailer'
+import { Invite } from '../models/Invite.js'
 import { Job } from '../models/Job.js'
 import { Task } from '../models/Task.js'
 import { User } from '../models/User.js'
@@ -114,7 +115,7 @@ export const updateJob = expressAsyncHandler(async (req, res) => {
   const job = await Job.findById(jobId).exec()
 
   if (!job) {
-    return res.status(400).json({ message: 'Job not found' })
+    return res.status(404).json({ message: 'Job not found' })
   }
   if (jobName) {
     job.jobName = jobName
@@ -159,6 +160,31 @@ export const deleteJob = expressAsyncHandler(async (req, res) => {
 
 export const sendJobInvite = expressAsyncHandler(async (req, res) => {
   const { jobId, email, role } = req.body
+  console.log(req.body)
+
+  if (!jobId) {
+    return res.status(400).json({ message: 'Job ID Required' })
+  }
+  if (!email) {
+    return res.status(400).json({ message: 'Email required for invite.' })
+  }
+  if (!role) {
+    return res
+      .status(400)
+      .json({ message: 'Role must be assigned with invite.' })
+  }
+
+  const invite = await Invite.create({
+    jobId,
+    email,
+    role,
+  })
+  if (invite) {
+    res.status(201).json({ message: `Invite sent` })
+  } else {
+    res.status(400).json({ message: 'invalid user data received' })
+  }
+  console.log(invite)
 
   const transporter = createTransport({
     host: 'smtppro.zoho.com',
@@ -174,9 +200,9 @@ export const sendJobInvite = expressAsyncHandler(async (req, res) => {
     from: 'welcome@jobboost.app',
     to: email,
     subject: "You've been invited to join!",
-    text: 'this is a test email that will have a link to follow',
+    text: `Someone has invited you to join their job at JobBoost. \n Click the link to join: \n jobboost.app/join/${invite._id} \n localhost:5173/join/${invite._id}`,
   }
-  console.log(EMAIL_USERNAME)
+
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.log(error)
@@ -184,4 +210,35 @@ export const sendJobInvite = expressAsyncHandler(async (req, res) => {
       console.log('Email sent: ' + info.response)
     }
   })
+})
+export const joinJob = expressAsyncHandler(async (req, res) => {
+  const { inviteId, userId } = req.body
+  const invite = await Invite.findOne({ _id: inviteId })
+  const foundUser = await User.findById(userId)
+  const foundJob = await Job.findById(invite.jobId)
+  if (!invite) {
+    return res.status(404).json({ message: 'invite not found' })
+  }
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID required to join' })
+  }
+  if (!foundUser) {
+    return res.status(400).json({ message: 'Invalid user ID' })
+  }
+  if (!foundJob) {
+    return res.status(400).json({ message: 'Invalid job ID' })
+  }
+  if (invite.email !== foundUser.email) {
+    return res
+      .status(401)
+      .json({ message: 'User email does not match invite email' })
+  }
+  if (foundJob.usersOnJob.includes(userId)) {
+    return res.status(400)
+  }
+  foundJob.usersOnJob.push(userId)
+  await foundJob.save()
+  return res
+    .status(200)
+    .json({ message: `${foundUser.firstName} successfully added to job.` })
 })

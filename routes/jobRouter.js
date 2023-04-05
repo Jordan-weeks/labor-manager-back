@@ -5,6 +5,7 @@ import {
   getAssignedJobs,
   getIndividualJob,
   getUsernames,
+  joinJob,
   sendJobInvite,
   updateJob,
 } from '../controllers/jobController.js'
@@ -15,6 +16,7 @@ export const router = express.Router()
 router.route('/').post(createNewJob)
 router.route('/invite').post(sendJobInvite)
 router.route('/update-job').patch(updateJob)
+router.route('/join').patch(joinJob)
 router.route('/delete-job').delete(deleteJob)
 router.route('/:id').get(getAssignedJobs)
 router.route('/usernames/:jobId').get(getUsernames)
