@@ -1,4 +1,5 @@
 import expressAsyncHandler from 'express-async-handler'
+import mongoose from 'mongoose'
 import { createTransport } from 'nodemailer'
 import { Invite } from '../models/Invite.js'
 import { Job } from '../models/Job.js'
@@ -7,7 +8,7 @@ import { User } from '../models/User.js'
 
 const EMAIL_USERNAME = process.env.EMAIL_USERNAME
 const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD
-// @desc Get jobs assigned to logged in user
+// @desc Get all jobs assigned to logged in user
 // @route GET /jobs
 // @access Private
 
@@ -19,21 +20,23 @@ export const getAssignedJobs = expressAsyncHandler(async (req, res) => {
   if (!foundUser) {
     return res.status(400).json({ message: 'Invalid userId.' })
   }
-  const jobs = await Job.find({ usersOnJob: id }).exec()
+  const jobs = await Job.find({ 'usersOnJob.userId': id }).exec()
 
   if (!jobs) {
     return res.status(204).json({ message: 'No jobs assigned to user.' })
-  } else res.json(jobs)
+  } else {
+    res.json(jobs)
+  }
 })
+
+// @desc Get all jobs assigned to logged in
+// @route GET /jobs
+// @access Private
 
 export const getIndividualJob = expressAsyncHandler(async (req, res) => {
   const { jobId } = req.params
-  // const foundUser = await User.findById(id).exec();
 
-  // if (!foundUser) {
-  //   return res.status(400).json({ message: "Invalid userId." });
-  // }
-  const job = await Job.find({ _id: jobId }).exec()
+  const job = await Job.findById(jobId).exec()
 
   if (!job) {
     return res.status(400).json({ message: 'Invalid jobId..' })
@@ -56,9 +59,10 @@ export const getUsernames = expressAsyncHandler(async (req, res) => {
 
   const getFullNames = async () => {
     const fullNames = Promise.all(
-      users.map(async (userId) => {
-        const user = await User.findById(userId)
-        const fullName = `${user.firstName} ${user.lastName}`
+      users.map(async (user) => {
+        const foundUser = await User.findById(user.userId)
+        const fullName = `${foundUser?.firstName} ${foundUser?.lastName}`
+        const userId = user.userId
 
         return { userId, fullName }
       })
@@ -67,7 +71,6 @@ export const getUsernames = expressAsyncHandler(async (req, res) => {
   }
   const data = await getFullNames()
 
-  console.log(data)
   return res.status(200).json(data)
 })
 
@@ -89,7 +92,7 @@ export const createNewJob = expressAsyncHandler(async (req, res) => {
   const job = await Job.create({
     jobName,
     jobNumber,
-    usersOnJob: userId,
+    usersOnJob: { userId, role: 'admin' },
     active: true,
   })
   if (job) {
@@ -104,7 +107,6 @@ export const createNewJob = expressAsyncHandler(async (req, res) => {
 // @access Private
 export const updateJob = expressAsyncHandler(async (req, res) => {
   const { jobId, jobName, jobNumber, usersOnJob, active } = req.body
-  console.log(req.body)
 
   if (!jobId || !jobName || typeof active !== 'boolean') {
     return res
@@ -130,7 +132,6 @@ export const updateJob = expressAsyncHandler(async (req, res) => {
   job.active = active
   const updatedJob = await job.save()
   res.json({ message: `${updatedJob.jobName} is updated` })
-  console.log(updatedJob)
 })
 
 // @desc Delete Job
@@ -160,7 +161,6 @@ export const deleteJob = expressAsyncHandler(async (req, res) => {
 
 export const sendJobInvite = expressAsyncHandler(async (req, res) => {
   const { jobId, email, role } = req.body
-  console.log(req.body)
 
   if (!jobId) {
     return res.status(400).json({ message: 'Job ID Required' })
@@ -213,11 +213,17 @@ export const sendJobInvite = expressAsyncHandler(async (req, res) => {
 })
 export const joinJob = expressAsyncHandler(async (req, res) => {
   const { inviteId, userId } = req.body
+
+  //add this line as a check to validate if object id exists in the database or not
+  if (!mongoose.Types.ObjectId.isValid(inviteId)) {
+    return res.status(404).json({ message: `No invite with id :${inviteId}` })
+  }
+
   const invite = await Invite.findOne({ _id: inviteId })
   const foundUser = await User.findById(userId)
   const foundJob = await Job.findById(invite.jobId)
   if (!invite) {
-    return res.status(404).json({ message: 'invite not found' })
+    return res.status(404).json({ message: 'Invite not found' })
   }
   if (!userId) {
     return res.status(400).json({ message: 'User ID required to join' })
@@ -233,10 +239,13 @@ export const joinJob = expressAsyncHandler(async (req, res) => {
       .status(401)
       .json({ message: 'User email does not match invite email' })
   }
-  if (foundJob.usersOnJob.includes(userId)) {
-    return res.status(400)
+
+  if (foundJob.usersOnJob.some((user) => user.userId === userId)) {
+    return res
+      .status(400)
+      .json({ message: 'You are already a part of this job.' })
   }
-  foundJob.usersOnJob.push(userId)
+  foundJob.usersOnJob.push({ userId: userId, role: invite.role })
   await foundJob.save()
   return res
     .status(200)
