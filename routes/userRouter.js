@@ -1,19 +1,15 @@
-import express from "express";
+import express from 'express'
 import {
-  getAllUsers,
   createNewUser,
-  updateUser,
   deleteUser,
+  getAllUsers,
   getSelectUser,
-} from "../controllers/userController.js";
-import { verifyJWT } from "../middleware/verifyJWT.js";
+  updateUser,
+} from '../controllers/userController.js'
+import { verifyJWT } from '../middleware/verifyJWT.js'
 
-export const router = express.Router();
-router.use(verifyJWT);
-router
-  .route("/")
-  .get(getAllUsers)
-  .post(createNewUser)
-  .patch(updateUser)
-  .delete(deleteUser);
-router.route("/:id").get(getSelectUser);
+export const router = express.Router()
+router.route('/').post(createNewUser)
+router.use(verifyJWT)
+router.route('/').get(getAllUsers).patch(updateUser).delete(deleteUser)
+router.route('/:id').get(getSelectUser)

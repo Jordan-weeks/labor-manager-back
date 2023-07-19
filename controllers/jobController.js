@@ -251,3 +251,35 @@ export const joinJob = expressAsyncHandler(async (req, res) => {
     .status(200)
     .json({ message: `${foundUser.firstName} successfully added to job.` })
 })
+
+// @desc Leave job
+// @route PATCH /jobs/leave-job
+// @access Private all users
+
+export const leaveJob = expressAsyncHandler(async (req, res) => {
+  //todo if last user on job, return error. if last admin on job, return error.
+
+  const userId = req.user
+  const { jobId } = req.body
+
+  const job = await Job.findById(jobId).exec()
+  if (!job) {
+    return res.status(400).json({ message: 'job not found' })
+  }
+  const admins = job.usersOnJob.map((user) => {
+    if (user.role === 'admin') {
+      return user
+    }
+  })
+  if (admins.length <= 1) {
+    res.status(405).json({ message: `At least one admin must remain in job.` })
+  } else if (job.usersOnJob.length <= 1) {
+    res.status(405).json({ message: `At least one admin must remain in job.` })
+  } else {
+    job.usersOnJob.pull({ userID: userId })
+    await job.save()
+    res
+      .status(201)
+      .json({ message: `You have been removed from ${job.jobName}` })
+  }
+})
