@@ -39,8 +39,15 @@ export const addTask = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const updateTask = expressAsyncHandler(async (req, res) => {
-  const { jobId, taskId, taskName, description, estimatedHours, status } =
-    req.body
+  const {
+    jobId,
+    taskId,
+    taskName,
+    description,
+    estimatedHours,
+    status,
+    assignees,
+  } = req.body
   console.log(req.body)
 
   if (!jobId) {
@@ -65,7 +72,12 @@ export const updateTask = expressAsyncHandler(async (req, res) => {
   if (status) {
     task.status = status
   }
-
+  if (assignees) {
+    const assignedUsers = assignees.map((assignee) => {
+      return { userId: assignee.value }
+    })
+    task.assignees = assignedUsers
+  }
   await job.save()
   res.json({ message: `${task.taskName} updated` })
 })

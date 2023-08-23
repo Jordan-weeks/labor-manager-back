@@ -12,15 +12,19 @@ const commentSchema = new Schema({
     required: true,
   },
 })
-
+const assignedUserSchema = new Schema({
+  userId: {
+    type: String,
+    required: true,
+  },
+})
 export const taskSchema = new Schema({
   taskName: {
     type: String,
     required: true,
   },
-  assignedTo: {
-    type: String,
-  },
+  assignees: [assignedUserSchema],
+
   status: {
     type: String,
     required: true,
