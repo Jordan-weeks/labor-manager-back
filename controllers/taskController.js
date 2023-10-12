@@ -39,16 +39,11 @@ export const addTask = expressAsyncHandler(async (req, res) => {
 // @access Private
 
 export const updateTask = expressAsyncHandler(async (req, res) => {
-  const {
-    jobId,
-    taskId,
-    taskName,
-    description,
-    estimatedHours,
-    status,
-    assignees,
-  } = req.body
-  console.log(req.body)
+  const { jobId, taskId, updatedTask } = req.body
+  console.log(updatedTask)
+
+  const { taskName, description, estimatedHours, status, assignees } =
+    updatedTask
 
   if (!jobId) {
     return res.status(400).json({ message: 'Job ID required for lookup' })
@@ -70,11 +65,12 @@ export const updateTask = expressAsyncHandler(async (req, res) => {
     task.estimatedHours = estimatedHours
   }
   if (status) {
+    console.log(status)
     task.status = status
   }
   if (assignees) {
     const assignedUsers = assignees.map((assignee) => {
-      return { userId: assignee.value }
+      return { userId: assignee.userId }
     })
     task.assignees = assignedUsers
   }
